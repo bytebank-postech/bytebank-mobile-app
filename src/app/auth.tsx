@@ -1,10 +1,11 @@
-import { Menu } from '@/components/layout'
 import { StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-export default function HomeScreen() {
+export default function AuthScreen() {
   return (
     <SafeAreaView>
-      <Menu />
+      {/* <Loader /> */}
+      {/* <Divider orientacao="horizontal" />
+      <Divider orientacao="vertical" /> */}
     </SafeAreaView>
   )
 }
