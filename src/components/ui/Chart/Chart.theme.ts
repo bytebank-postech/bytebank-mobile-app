@@ -1,37 +1,32 @@
-import type { TransactionType } from '@/shared/types/transaction'
-import { colors } from '../../../styles/colors'
+import type { TransactionType } from '@bytebank/shared'
 
 export const chartTheme = {
-  fontFamily: 'Inter_400Regular',
-
+  fontFamily: 'Inter, sans-serif',
   fontSize: {
     sm: 12,
     md: 14,
   },
-
   radius: {
     card: 8,
     bar: 6,
     pie: 4,
   },
-
   colors: {
-    primary: colors.primary,
-    secondary: colors.secondary,
-    success: colors.success,
-    tertiary: colors.tertiary,
-    tertiaryAction: colors.tertiaryAction,
-    secondaryAction: colors.secondaryAction,
-    typographyActive: colors.typographyActive,
-    typographyDefault: colors.typographyDefault,
-    typographyPlaceholder: colors.typographyPlaceholder,
-    white: colors.white,
-    grid: colors.tertiary,
+    primary: '#004d61',
+    secondary: '#d33418',
+    success: '#338125',
+    tertiary: '#dee9ea',
+    tertiaryAction: '#83bbc0',
+    secondaryAction: '#d5604c',
+    typographyActive: '#024d60',
+    typographyDefault: '#000000',
+    typographyPlaceholder: '#444444',
+    white: '#ffffff',
+    grid: '#dee9ea',
   },
-
   series: {
-    receitas: colors.success,
-    despesas: colors.secondary,
+    receitas: '#338125',
+    despesas: '#d33418',
   },
 } as const
 

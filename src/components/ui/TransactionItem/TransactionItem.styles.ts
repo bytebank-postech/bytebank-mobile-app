@@ -6,6 +6,7 @@ export const styles = StyleSheet.create({
   transactionItem: {
     width: '100%',
     paddingVertical: 16,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 77, 97, 0.12)',
   },

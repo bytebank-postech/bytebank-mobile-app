@@ -3,7 +3,7 @@ import { Pressable, View } from 'react-native'
 import PopupMenu from '../PopupMenu/PopupMenu'
 import Typography from '../Typography/Typography'
 
-import { styles } from './TransactionItem.Styles'
+import { styles } from './TransactionItem.styles'
 import type { TransactionItemProps } from './TransactionItem.types'
 
 export default function TransactionItem({
