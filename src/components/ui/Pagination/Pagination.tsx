@@ -66,7 +66,7 @@ export default function Pagination({
 
       {pages.map((page, index) =>
         page === '...' ? (
-          <PaginationButton key={index} disabled label="..." />
+          <PaginationButton key={`ellipsis-${index}`} disabled label="..." />
         ) : (
           <PaginationButton
             key={page}

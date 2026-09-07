@@ -1,5 +1,4 @@
 import Avatar from '@/components/Avatar/Avatar'
-import Datepicker from '@/components/Datepicker/Datepicker'
 import {
   Button,
   Chart,
@@ -10,6 +9,7 @@ import {
   TransactionItem,
   Typography,
 } from '@/components/ui'
+import { Link } from 'expo-router'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -28,6 +28,7 @@ export default function HomeScreen() {
     <SafeAreaView>
       <View>
         <Button onPress={handleOpenModal}>Abrir Modal</Button>
+        <Link href="/home">Ir para home</Link>
         <Avatar />
         <TransactionItem
           type="Pix"
@@ -40,7 +41,10 @@ export default function HomeScreen() {
         <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
           <View>
             <Typography variant="body">Modal Aberto</Typography>
-            <Input placeholder="Digite algo" />
+            <Input
+              placeholder="Digite algo"
+              onChangeText={(val) => console.log(val)}
+            />
             <Checkbox
               id="teste"
               type="checkbox"
@@ -48,12 +52,12 @@ export default function HomeScreen() {
               value={'teste'}
               label="Checkbox de teste"
             />
-            <Datepicker onChange={(date) => console.log(date)} />
+            {/* <Datepicker onChange={(date) => console.log(date)} /> */}
             <Pagination
               currentPage={1}
               totalItems={100}
               pageSize={10}
-              onPageChange={() => {}}
+              onPageChange={(page) => console.log(page)}
             />
           </View>
         </Modal>
