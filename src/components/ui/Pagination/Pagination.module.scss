@@ -1,0 +1,21 @@
+@use '../../../styles/variables.scss' as *;
+@use '../../../styles/mixins.scss' as *;
+@use '../../../styles/colors.scss' as *;
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin: 20px 0;
+}
+
+.active {
+  text-decoration: underline;
+  text-decoration-color: $white;
+  box-shadow: 0 0 0 2px $primary-ghost;
+}
+.disabled {
+  opacity: 0.75;
+  filter: saturate(0.8);
+  pointer-events: none;
+}
