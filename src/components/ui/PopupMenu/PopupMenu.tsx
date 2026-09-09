@@ -9,7 +9,7 @@ import type { PopupMenuProps } from './PopupMenu.types'
 export default function PopupMenu({
   items,
   align = 'right',
-  trigger = 'kebab',
+  children,
   style,
 }: PopupMenuProps) {
   const [open, setOpen] = useState(false)
@@ -24,10 +24,16 @@ export default function PopupMenu({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Ações"
+        accessibilityState={{ expanded: open }}
         onPress={() => setOpen((value) => !value)}
-        style={({ pressed }) => [styles.kebab, pressed && styles.kebabPressed]}
+        style={({ pressed }) => [
+          children ? styles.trigger : styles.kebab,
+          pressed && styles.kebabPressed,
+        ]}
       >
-        <Icon name="more-vert" size={22} color="rgba(2, 77, 96, 0.95)" />
+        {children ?? (
+          <Icon name="more-vert" size={22} color="rgba(2, 77, 96, 0.95)" />
+        )}
       </Pressable>
 
       {open ? (

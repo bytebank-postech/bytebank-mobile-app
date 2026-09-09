@@ -14,6 +14,11 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  trigger: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   kebabPressed: {
     opacity: 0.8,
     transform: [{ translateY: 0.5 }],
@@ -22,7 +27,8 @@ export const styles = StyleSheet.create({
   menu: {
     position: 'absolute',
 
-    top: 32,
+    top: '100%',
+    marginTop: 4,
 
     minWidth: 160,
 

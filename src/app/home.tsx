@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
 
 import Avatar from '@/components/Avatar/Avatar'
 import Datepicker from '@/components/Datepicker/Datepicker'
@@ -10,6 +11,7 @@ import {
   Input,
   Modal,
   Paper,
+  PopupMenu,
   Select,
   TransactionItem,
   Typography,
@@ -60,6 +62,7 @@ const formatCurrency = (value: number) =>
   })
 
 export default function Home() {
+  const router = useRouter()
   const [transactions, setTransactions] = useState(initialTransactions)
   const [balanceVisible, setBalanceVisible] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -143,7 +146,18 @@ export default function Home() {
               })}
             </Typography>
           </View>
-          <Avatar />
+          <PopupMenu
+            align="right"
+            items={[
+              {
+                id: 'logout',
+                label: 'Sair',
+                onClick: () => router.replace('/login'),
+              },
+            ]}
+          >
+            <Avatar />
+          </PopupMenu>
         </View>
 
         <Paper color="primary" style={styles.balanceCard}>
@@ -279,6 +293,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    zIndex: 40,
   },
   balanceCard: {
     gap: 8,
