@@ -1,3 +1,5 @@
+export * from '@/shared/types/transaction'
+
 export type TransactionType = 'Transferência' | 'Pix' | 'Depósito' | 'Pagamento'
 
 export interface Transaction {
