@@ -1,85 +1,231 @@
-import { useState } from 'react'
-import { FlatList, StyleSheet, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { Input, Paper, Select, TransactionItem, Typography } from '@/components/ui'
-import type { Transaction } from '@/shared/types/transaction'
+import Datepicker from '@/components/Datepicker/Datepicker'
+import TransactionFormModal from '@/components/TransactionFormModal/TransactionFormModal'
+import {
+  Button,
+  ConfirmDialog,
+  Input,
+  Loader,
+  Paper,
+  Select,
+  TransactionItem,
+  Typography,
+} from '@/components/ui'
+import { useTransactions } from '@/contexts/transactions-context'
+import type { CreateTransactionInput } from '@/services/transactions'
+import {
+  TRANSACTION_CATEGORIES,
+  type Transaction,
+  type TransactionCategory,
+} from '@/shared/types/transaction'
+import { formatDateToBR, toISODate } from '@/shared/utils/date'
 import { colors } from '@/styles/colors'
+
+const SEARCH_DEBOUNCE_MS = 400
 
 const categoryOptions = [
   { label: 'Todas as categorias', value: '' },
-  { label: 'Alimentação', value: 'Alimentação' },
-  { label: 'Moradia', value: 'Moradia' },
-  { label: 'Transporte', value: 'Transporte' },
-  { label: 'Saúde', value: 'Saúde' },
-  { label: 'Lazer', value: 'Lazer' },
-  { label: 'Educação', value: 'Educação' },
-  { label: 'Salário', value: 'Salário' },
-  { label: 'Outros', value: 'Outros' },
+  ...TRANSACTION_CATEGORIES.map((category) => ({
+    label: category,
+    value: category,
+  })),
 ]
 
-// Dados mocados para testes visuais e de filtros
-const mockTransactions: Transaction[] = [
-  {
-    id: '1',
-    type: 'Depósito',
-    name: 'Salário Mensal',
-    amount: 5200,
-    date: '2026-09-01',
-    category: 'Salário',
-  },
-  {
-    id: '2',
-    type: 'Pix',
-    name: 'Supermercado',
-    amount: -350.8,
-    date: '2026-09-02',
-    category: 'Alimentação',
-  },
-  {
-    id: '3',
-    type: 'Transferência',
-    name: 'Aluguel',
-    amount: -1500,
-    date: '2026-09-03',
-    category: 'Moradia',
-  },
-  {
-    id: '4',
-    type: 'Pagamento',
-    name: 'Farmácia',
-    amount: -89.9,
-    date: '2026-09-04',
-    category: 'Saúde',
-  },
-  {
-    id: '5',
-    type: 'Pix',
-    name: 'Uber',
-    amount: -24.5,
-    date: '2026-09-05',
-    category: 'Transporte',
-  },
-  {
-    id: '6',
-    type: 'Pagamento',
-    name: 'Cinema',
-    amount: -60,
-    date: '2026-09-06',
-    category: 'Lazer',
-  },
-]
+const buildRemoveMessage = (name: string) =>
+  `Excluir "${name}"? Essa ação não pode ser desfeita.`
 
 export default function TransactionScreen() {
-  const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('')
+  const {
+    transactions,
+    filters,
+    isLoading,
+    isLoadingMore,
+    isRefreshing,
+    error,
+    hasMore,
+    setFilters,
+    refresh,
+    loadMore,
+    createTransaction,
+    updateTransaction,
+    removeTransaction,
+  } = useTransactions()
 
-  // Filtro local em memória
-  const filteredTransactions = mockTransactions.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase())
-    const matchesCategory = selectedCategory ? item.category === selectedCategory : true
-    return matchesSearch && matchesCategory
-  })
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingTransaction, setEditingTransaction] =
+    useState<Transaction | null>(null)
+  const [transactionToRemove, setTransactionToRemove] =
+    useState<Transaction | null>(null)
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setFilters({
+        search: search.trim() || undefined,
+        category: (category || undefined) as TransactionCategory | undefined,
+        from: from || undefined,
+        to: to || undefined,
+      })
+    }, SEARCH_DEBOUNCE_MS)
+
+    return () => clearTimeout(timeout)
+  }, [search, category, from, to, setFilters])
+
+  const hasActiveFilters = Boolean(search || category || from || to)
+
+  const isEmpty = transactions.length === 0
+
+  const handleClearFilters = () => {
+    setSearch('')
+    setCategory('')
+    setFrom('')
+    setTo('')
+  }
+
+  const handleOpenCreateForm = () => {
+    setEditingTransaction(null)
+    setIsFormOpen(true)
+  }
+
+  const handleOpenEditForm = (transaction: Transaction) => {
+    setEditingTransaction(transaction)
+    setIsFormOpen(true)
+  }
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false)
+    setEditingTransaction(null)
+  }
+
+  const handleSubmitForm = (input: CreateTransactionInput) =>
+    editingTransaction
+      ? updateTransaction(editingTransaction.id, input)
+      : createTransaction(input)
+
+  const handleOpenRemoveDialog = (transaction: Transaction) => {
+    setTransactionToRemove(transaction)
+  }
+
+  const handleCloseRemoveDialog = () => {
+    setTransactionToRemove(null)
+  }
+
+  const renderFooter = () => {
+    if (isLoadingMore) {
+      return (
+        <View style={styles.footer}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      )
+    }
+
+    if (error && !isEmpty) {
+      return (
+        <View style={styles.footer}>
+          <Typography variant="body-sm" color="error">
+            {error}
+          </Typography>
+
+          <Button size="medium" variant="outline" onPress={loadMore}>
+            Tentar novamente
+          </Button>
+        </View>
+      )
+    }
+
+    if (!hasMore && !isEmpty) {
+      return (
+        <View style={styles.footer}>
+          <Typography variant="body-sm" color="placeholder">
+            Fim da lista
+          </Typography>
+        </View>
+      )
+    }
+
+    return null
+  }
+
+  const renderContent = () => {
+    if (isLoading) return <Loader />
+
+    if (error && isEmpty) {
+      return (
+        <View style={styles.stateContainer}>
+          <Typography color="error">{error}</Typography>
+
+          <Button size="medium" onPress={refresh}>
+            Tentar novamente
+          </Button>
+        </View>
+      )
+    }
+
+    return (
+      <FlatList
+        data={transactions}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TransactionItem
+            type={item.type}
+            name={item.name}
+            amount={item.amount}
+            date={formatDateToBR(item.date)}
+            hasReceipts={item.receipts.length > 0}
+            menuItems={[
+              {
+                id: 'edit',
+                label: 'Editar',
+                onClick: () => handleOpenEditForm(item),
+              },
+              {
+                id: 'remove',
+                label: 'Excluir',
+                onClick: () => handleOpenRemoveDialog(item),
+              },
+            ]}
+            menuPlacement="inline-right"
+          />
+        )}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={refresh}
+            tintColor={colors.primary}
+          />
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.4}
+        contentContainerStyle={isEmpty ? styles.emptyList : undefined}
+        ListEmptyComponent={
+          <View style={styles.stateContainer}>
+            <Typography color="placeholder">
+              {hasActiveFilters
+                ? 'Nenhuma transação encontrada para os filtros aplicados.'
+                : 'Você ainda não tem transações registradas.'}
+            </Typography>
+
+            {hasActiveFilters ? (
+              <Button
+                size="medium"
+                variant="outline"
+                onPress={handleClearFilters}
+              >
+                Limpar filtros
+              </Button>
+            ) : null}
+          </View>
+        }
+        ListFooterComponent={renderFooter}
+      />
+    )
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -88,46 +234,85 @@ export default function TransactionScreen() {
           Minhas Transações
         </Typography>
 
-        {/* Filtros */}
+        <Button size="large" fullWidth onPress={handleOpenCreateForm}>
+          Nova transação
+        </Button>
+
         <View style={styles.filterSection}>
           <Input
-            placeholder="Pesquisar por descrição..."
+            placeholder="Buscar pelo início da descrição..."
             value={search}
             onChangeText={setSearch}
             paddingSize="large"
             style={styles.inputBackground}
           />
+
+          {filters.search ? (
+            <Typography variant="body-sm" color="placeholder">
+              Resultados em ordem alfabética de descrição.
+            </Typography>
+          ) : null}
+
           <Select
             placeholder="Filtrar por Categoria"
             options={categoryOptions}
-            value={selectedCategory}
-            onChange={setSelectedCategory}
+            value={category}
+            onChange={setCategory}
             style={styles.inputBackground}
           />
+
+          <View style={styles.periodRow}>
+            <View style={styles.periodField}>
+              <Datepicker
+                placeholder="De"
+                value={from}
+                maximumDate={to ? new Date(`${to}T12:00:00`) : undefined}
+                onChange={(date) => setFrom(toISODate(date))}
+                style={styles.inputBackground}
+              />
+            </View>
+
+            <View style={styles.periodField}>
+              <Datepicker
+                placeholder="Até"
+                value={to}
+                minimumDate={from ? new Date(`${from}T12:00:00`) : undefined}
+                onChange={(date) => setTo(toISODate(date))}
+                style={styles.inputBackground}
+              />
+            </View>
+          </View>
+
+          {hasActiveFilters ? (
+            <Button size="medium" variant="ghost" onPress={handleClearFilters}>
+              Limpar filtros
+            </Button>
+          ) : null}
         </View>
 
-        {/* Lista com Mock */}
-        <Paper style={styles.listCard}>
-          <FlatList
-            data={filteredTransactions}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TransactionItem
-                type={item.type}
-                name={item.name}
-                amount={item.amount}
-                date={item.date}
-                menuPlacement="inline-right"
-              />
-            )}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Typography color="placeholder">Nenhuma transação encontrada.</Typography>
-              </View>
-            }
-          />
-        </Paper>
+        <Paper style={styles.listCard}>{renderContent()}</Paper>
       </View>
+
+      {/* A key remonta o formulário: o Modal do RN não desmonta ao fechar. */}
+      <TransactionFormModal
+        key={editingTransaction?.id ?? 'new'}
+        isOpen={isFormOpen}
+        transaction={editingTransaction}
+        onClose={handleCloseForm}
+        onSubmit={handleSubmitForm}
+      />
+
+      {transactionToRemove ? (
+        <ConfirmDialog
+          isOpen
+          title="Excluir transação"
+          message={buildRemoveMessage(transactionToRemove.name)}
+          confirmLabel="Excluir"
+          pendingLabel="Excluindo..."
+          onConfirm={() => removeTransaction(transactionToRemove.id)}
+          onClose={handleCloseRemoveDialog}
+        />
+      ) : null}
     </SafeAreaView>
   )
 }
@@ -142,10 +327,17 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 16,
   },
-filterSection: {
+  filterSection: {
     gap: 12,
     zIndex: 50, // Força a camada ficar por cima no iOS
     elevation: 50, // Força a camada ficar por cima no Android
+  },
+  periodRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  periodField: {
+    flex: 1,
   },
   inputBackground: {
     backgroundColor: colors.white,
@@ -154,8 +346,18 @@ filterSection: {
     flex: 1,
     padding: 8,
   },
-  emptyContainer: {
+  emptyList: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  stateContainer: {
     padding: 32,
     alignItems: 'center',
+    gap: 16,
+  },
+  footer: {
+    padding: 16,
+    alignItems: 'center',
+    gap: 12,
   },
 })

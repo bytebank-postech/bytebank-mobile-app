@@ -16,8 +16,10 @@ import {
   TransactionItem,
   Typography,
 } from '@/components/ui'
+import { MOCK_USER_ID } from '@/shared/constants/auth'
+import { toISODate } from '@/shared/utils/date'
 import { colors } from '@/styles/colors'
-import type { Transaction, TransactionType } from '@/types/transaction'
+import type { Transaction, TransactionType } from '@/shared/types/transaction'
 
 const typeOptions = [
   { value: 'Depósito', label: 'Depósito' },
@@ -29,24 +31,36 @@ const typeOptions = [
 const initialTransactions: Transaction[] = [
   {
     id: '1',
+    userId: MOCK_USER_ID,
     type: 'Depósito',
+    category: 'Salário',
     name: 'Salário',
     amount: 5200,
     date: '2026-09-03',
+    receipts: [],
+    createdAt: '2026-09-03T09:00:00.000Z',
   },
   {
     id: '2',
+    userId: MOCK_USER_ID,
     type: 'Pix',
+    category: 'Alimentação',
     name: 'Mercado',
     amount: -180.5,
     date: '2026-09-02',
+    receipts: [],
+    createdAt: '2026-09-02T18:30:00.000Z',
   },
   {
     id: '3',
+    userId: MOCK_USER_ID,
     type: 'Transferência',
+    category: 'Moradia',
     name: 'Aluguel',
     amount: -1400,
     date: '2026-09-01',
+    receipts: [],
+    createdAt: '2026-09-01T08:15:00.000Z',
   },
 ]
 
@@ -101,10 +115,14 @@ export default function Home() {
     setTransactions((current) => [
       {
         id: String(Date.now()),
+        userId: MOCK_USER_ID,
         type,
+        category: 'Outros',
         name: name.trim(),
         amount: isIncome ? Math.abs(numericAmount) : -Math.abs(numericAmount),
         date,
+        receipts: [],
+        createdAt: new Date().toISOString(),
       },
       ...current,
     ])
@@ -267,9 +285,7 @@ export default function Home() {
           <Datepicker
             label="Data"
             value={date}
-            onChange={(selectedDate) =>
-              setDate(selectedDate.toISOString().slice(0, 10))
-            }
+            onChange={(selectedDate) => setDate(toISODate(selectedDate))}
           />
           <Button size="large" fullWidth onPress={createTransaction}>
             Concluir transação

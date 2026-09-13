@@ -72,5 +72,8 @@ export const styles = StyleSheet.create({
 
   content: {
     zIndex: 1,
+
+    // Sem isto o conteúdo estoura o maxHeight e a ScrollView não rola.
+    flexShrink: 1,
   },
 })

@@ -24,11 +24,12 @@ export const styles = StyleSheet.create({
     transform: [{ translateY: 0.5 }],
   },
 
+  backdrop: {
+    flex: 1,
+  },
+
   menu: {
     position: 'absolute',
-
-    top: '100%',
-    marginTop: 4,
 
     minWidth: 160,
 
@@ -40,8 +41,6 @@ export const styles = StyleSheet.create({
 
     overflow: 'hidden',
 
-    zIndex: 30,
-
     elevation: 8,
 
     shadowOffset: {
@@ -52,18 +51,12 @@ export const styles = StyleSheet.create({
     shadowRadius: 11,
   },
 
-  right: {
-    right: 0,
-  },
-
-  left: {
-    left: 0,
-  },
-
   item: {
     width: '100%',
 
-    paddingVertical: 10,
+    minHeight: 44,
+
+    paddingVertical: 12,
     paddingHorizontal: 12,
 
     justifyContent: 'center',
