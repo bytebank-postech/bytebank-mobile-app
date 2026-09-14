@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { Redirect, useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
 
 import Avatar from '@/components/Avatar/Avatar'
 import Datepicker from '@/components/Datepicker/Datepicker'
@@ -16,6 +16,7 @@ import {
   TransactionItem,
   Typography,
 } from '@/components/ui'
+import { useAuth } from '@/contexts/auth-context'
 import { colors } from '@/styles/colors'
 import type { Transaction, TransactionType } from '@/types/transaction'
 
@@ -63,6 +64,7 @@ const formatCurrency = (value: number) =>
 
 export default function Home() {
   const router = useRouter()
+  const { user, isLoading, signOut } = useAuth()
   const [transactions, setTransactions] = useState(initialTransactions)
   const [balanceVisible, setBalanceVisible] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -70,6 +72,10 @@ export default function Home() {
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState('')
+
+  if (!isLoading && !user) {
+    return <Redirect href="/login" />
+  }
 
   const balance = transactions.reduce((total, item) => total + item.amount, 0)
   const monthlyData = [
@@ -152,7 +158,19 @@ export default function Home() {
               {
                 id: 'logout',
                 label: 'Sair',
-                onClick: () => router.replace('/login'),
+                onClick: async () => {
+                  try {
+                    await signOut()
+                    router.replace('/login')
+                  } catch (error) {
+                    Alert.alert(
+                      'Sair',
+                      error instanceof Error
+                        ? error.message
+                        : 'Não foi possível sair.'
+                    )
+                  }
+                },
               },
             ]}
           >
@@ -170,7 +188,9 @@ export default function Home() {
               }
               onPress={() => setBalanceVisible((current) => !current)}
             >
-              <Typography color="white">{balanceVisible ? 'Ocultar' : 'Mostrar'}</Typography>
+              <Typography color="white">
+                {balanceVisible ? 'Ocultar' : 'Mostrar'}
+              </Typography>
             </Pressable>
           </View>
           <Typography variant="title-lg" color="white" weight="bold">
@@ -217,7 +237,9 @@ export default function Home() {
             Extrato
           </Typography>
           {transactions.length === 0 ? (
-            <Typography color="active">Nenhuma transação encontrada.</Typography>
+            <Typography color="active">
+              Nenhuma transação encontrada.
+            </Typography>
           ) : (
             transactions.map((transaction) => (
               <TransactionItem

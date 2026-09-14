@@ -1,16 +1,44 @@
-import { Link, useRouter } from 'expo-router'
+import { Link, Redirect, useRouter } from 'expo-router'
 import { useState } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 
 import { AuthLayout } from '@/components/auth/auth-layout'
 import { Button, Input, Typography } from '@/components/ui'
 import { Spacing } from '@/constants/theme'
+import { useAuth } from '@/contexts/auth-context'
 import { theme } from '@/styles/variables'
 
 export default function LoginScreen() {
   const router = useRouter()
-  const [usuario, setUsuario] = useState('')
+  const { user, isLoading, signIn } = useAuth()
+  const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  if (!isLoading && user) {
+    return <Redirect href="/home" />
+  }
+
+  async function handleLogin() {
+    setError('')
+
+    if (!email.trim() || !senha) {
+      setError('Preencha e-mail e senha.')
+      return
+    }
+
+    setSubmitting(true)
+
+    try {
+      await signIn({ email, password: senha })
+      router.replace('/home')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao entrar.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <AuthLayout
@@ -31,16 +59,20 @@ export default function LoginScreen() {
     >
       <View style={styles.field}>
         <Typography variant="title" color="active">
-          Usuário
+          E-mail
         </Typography>
         <Input
           fullWidth
           paddingSize="large"
-          placeholder="Digite seu usuário"
+          placeholder="Digite seu e-mail"
           autoCapitalize="none"
           autoCorrect={false}
-          value={usuario}
-          onChangeText={setUsuario}
+          keyboardType="email-address"
+          textContentType="emailAddress"
+          autoComplete="email"
+          value={email}
+          onChangeText={setEmail}
+          editable={!submitting}
         />
       </View>
 
@@ -53,13 +85,27 @@ export default function LoginScreen() {
           paddingSize="large"
           placeholder="Digite sua senha"
           secureTextEntry
+          textContentType="password"
+          autoComplete="password"
           value={senha}
           onChangeText={setSenha}
+          editable={!submitting}
         />
       </View>
 
-      <Button fullWidth size="large" onPress={() => router.push('/home')}>
-        Entrar
+      {error ? (
+        <Typography variant="body-sm" color="error">
+          {error}
+        </Typography>
+      ) : null}
+
+      <Button
+        fullWidth
+        size="large"
+        disabled={submitting}
+        onPress={handleLogin}
+      >
+        {submitting ? <ActivityIndicator color="#fff" /> : 'Entrar'}
       </Button>
     </AuthLayout>
   )
