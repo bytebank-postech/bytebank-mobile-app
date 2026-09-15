@@ -1,11 +1,19 @@
-import { StyleSheet, View } from 'react-native'
+import { useState } from 'react'
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import { BarChart, LineChart, PieChart } from 'react-native-gifted-charts'
 
 import Typography from '../Typography/Typography'
 import { chartTheme } from './Chart.theme'
 import type { ChartProps, Series } from './Chart.types'
 
+const DATA_POINT_SIZE = 8
+
 const styles = StyleSheet.create({
+  dataPoint: {
+    width: DATA_POINT_SIZE,
+    height: DATA_POINT_SIZE,
+    borderRadius: DATA_POINT_SIZE / 2,
+  },
   chart: {
     width: '100%',
     gap: 16,
@@ -44,6 +52,13 @@ const styles = StyleSheet.create({
   },
 })
 
+const CHART_HEIGHT = 280
+const INITIAL_SPACING = 16
+const END_SPACING = 16
+const Y_AXIS_WIDTH = 40
+const BAR_WIDTH = 28
+const MIN_SPACING = 8
+
 type ChartRow = Record<string, unknown>
 
 type GiftedPoint = {
@@ -71,6 +86,13 @@ const getLabel = (entry: ChartRow, key: string | undefined) => {
 const getSeriesColor = (series?: Series) =>
   series?.color ?? chartTheme.colors.primary
 
+const buildSpacing = (width: number, count: number, barWidth = 0) => {
+  const available = width - INITIAL_SPACING - END_SPACING - count * barWidth
+  const gaps = Math.max(barWidth ? count : count - 1, 1)
+
+  return Math.max(available / gaps, MIN_SPACING)
+}
+
 function toSeriesData(
   data: ChartRow[],
   series: Series,
@@ -82,6 +104,15 @@ function toSeriesData(
     frontColor: getSeriesColor(series),
   }))
 }
+
+const renderDataPoint = (point: GiftedPoint) => (
+  <View
+    style={[
+      styles.dataPoint,
+      { backgroundColor: point.frontColor ?? chartTheme.colors.primary },
+    ]}
+  />
+)
 
 function Legend({ series }: { series: Series[] }) {
   return (
@@ -110,6 +141,8 @@ export default function Chart({
   axis,
   type = 'line',
 }: ChartProps) {
+  const [canvasWidth, setCanvasWidth] = useState(0)
+
   const rows = data as ChartRow[]
   const labelKey = axis.x.key
   const chartData = series.length ? toSeriesData(rows, series[0], labelKey) : []
@@ -118,12 +151,22 @@ export default function Chart({
     color: getSeriesColor(item),
   }))
 
+  const chartWidth = Math.max(canvasWidth - Y_AXIS_WIDTH, 0)
+
+  const handleCanvasLayout = (event: LayoutChangeEvent) => {
+    setCanvasWidth(event.nativeEvent.layout.width)
+  }
+
   const commonProps = {
-    height: 280,
-    width: 320,
-    spacing: 48,
-    initialSpacing: 16,
-    endSpacing: 16,
+    height: CHART_HEIGHT,
+    width: chartWidth,
+    spacing: buildSpacing(
+      chartWidth,
+      chartData.length,
+      type === 'bar' ? BAR_WIDTH : 0
+    ),
+    initialSpacing: INITIAL_SPACING,
+    endSpacing: END_SPACING,
     noOfSections: 5,
     rulesColor: chartTheme.colors.grid,
     yAxisColor: chartTheme.colors.tertiary,
@@ -158,7 +201,7 @@ export default function Chart({
       <BarChart
         {...commonProps}
         data={chartData}
-        barWidth={28}
+        barWidth={BAR_WIDTH}
         roundedTop
         roundedBottom={false}
       />
@@ -169,8 +212,9 @@ export default function Chart({
         dataSet={dataSet.length > 1 ? dataSet : undefined}
         curved
         thickness={2.5}
-        dataPointsColor={getSeriesColor(series[0])}
-        dataPointsRadius={4}
+        customDataPoint={renderDataPoint}
+        dataPointsWidth={DATA_POINT_SIZE}
+        dataPointsHeight={DATA_POINT_SIZE}
         areaChart={type === 'area'}
         startFillColor={getSeriesColor(series[0])}
         endFillColor={chartTheme.colors.white}
@@ -189,7 +233,9 @@ export default function Chart({
       >
         {title}
       </Typography>
-      <View style={styles.canvas}>{chart}</View>
+      <View style={styles.canvas} onLayout={handleCanvasLayout}>
+        {canvasWidth > 0 ? chart : null}
+      </View>
       {series.length ? <Legend series={series} /> : null}
     </View>
   )

@@ -102,6 +102,12 @@ export const styles = StyleSheet.create({
     flexShrink: 0,
   },
 
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+
   nameText: {
     color: colors.typographyActive,
     marginBottom: 4,

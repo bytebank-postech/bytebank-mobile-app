@@ -1,13 +1,5 @@
-import { StyleSheet } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-export default function AuthScreen() {
-  return (
-    <SafeAreaView>
-      {/* <Loader /> */}
-      {/* <Divider orientacao="horizontal" />
-      <Divider orientacao="vertical" /> */}
-    </SafeAreaView>
-  )
-}
+import { Redirect } from 'expo-router'
 
-const styles = StyleSheet.create({})
+export default function AuthScreen() {
+  return <Redirect href="/login" />
+}

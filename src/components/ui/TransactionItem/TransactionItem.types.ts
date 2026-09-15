@@ -13,6 +13,7 @@ export type TransactionItemProps = {
   name?: string
   amount: number
   date: string
+  hasReceipts?: boolean
   menuItems?: TransactionMenuItem[]
   menuPlacement?: MenuPlacement
   selectable?: boolean

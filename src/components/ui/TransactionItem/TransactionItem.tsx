@@ -1,5 +1,8 @@
 import { Pressable, View } from 'react-native'
 
+import { colors } from '@/styles/colors'
+
+import Icon from '../Icon/Icon'
 import PopupMenu from '../PopupMenu/PopupMenu'
 import Typography from '../Typography/Typography'
 
@@ -11,6 +14,7 @@ export default function TransactionItem({
   name,
   amount,
   date,
+  hasReceipts = false,
   menuItems,
   menuPlacement = 'under-date',
   selectable,
@@ -109,9 +113,17 @@ export default function TransactionItem({
         </View>
 
         {name ? (
-          <Typography variant="body-sm" style={styles.nameText}>
-            {name}
-          </Typography>
+          <View style={styles.nameRow}>
+            {hasReceipts ? (
+              <View accessible accessibilityLabel="Com recibo anexado">
+                <Icon name="attach-file" size={14} color={colors.primary} />
+              </View>
+            ) : null}
+
+            <Typography variant="body-sm" style={styles.nameText}>
+              {name}
+            </Typography>
+          </View>
         ) : null}
 
         <Typography variant="body-sm" weight="bold" style={amountStyle}>
