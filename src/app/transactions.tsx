@@ -1,8 +1,9 @@
-import { Redirect } from 'expo-router'
+import { Redirect, router } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
   View,
@@ -15,6 +16,7 @@ import TransactionFormModal from '@/components/TransactionFormModal/TransactionF
 import {
   Button,
   ConfirmDialog,
+  Icon,
   Input,
   Loader,
   Paper,
@@ -95,6 +97,15 @@ export default function TransactionScreen() {
   const hasActiveFilters = Boolean(search || category || from || to)
 
   const isEmpty = transactions.length === 0
+
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back()
+      return
+    }
+
+    router.replace('/home')
+  }
 
   const handleClearFilters = () => {
     setSearch('')
@@ -264,9 +275,23 @@ export default function TransactionScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.mainContent}>
-        <Typography variant="title-lg" weight="bold" color="active">
-          Minhas Transações
-        </Typography>
+        <View style={styles.header}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Voltar para a home"
+            onPress={handleGoBack}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.backButtonPressed,
+            ]}
+          >
+            <Icon name="arrow-back" size={24} color={colors.primary} />
+          </Pressable>
+
+          <Typography variant="title-lg" weight="bold" color="active">
+            Minhas Transações
+          </Typography>
+        </View>
 
         <Button size="large" fullWidth onPress={handleOpenCreateForm}>
           Nova transação
@@ -371,6 +396,21 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     gap: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+  },
+  backButtonPressed: {
+    opacity: 0.6,
   },
   filterSection: {
     gap: 12,

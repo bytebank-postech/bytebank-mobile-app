@@ -1,8 +1,12 @@
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from '@react-native-community/datetimepicker'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Platform, Pressable, StyleSheet, View } from 'react-native'
-import DatePicker from 'react-native-date-picker'
 
+import Button from '../ui/Button/Button'
+import Modal from '../ui/Modal/Modal'
 import Typography from '../ui/Typography/Typography'
 import { styles } from './Datepicker.styles'
 import { DatepickerProps } from './Datepicker.types'
@@ -40,6 +44,7 @@ export default function Datepicker({
   onChange,
 }: DatepickerProps) {
   const [open, setOpen] = useState(false)
+  const [draftDate, setDraftDate] = useState(() => parseDate(value))
   const selectedDate = parseDate(value)
   const inputStyle = StyleSheet.flatten([
     styles.input,
@@ -72,6 +77,32 @@ export default function Datepicker({
     )
   }
 
+  const handleOpen = () => {
+    setDraftDate(selectedDate)
+    setOpen(true)
+  }
+
+  const handleClose = () => setOpen(false)
+
+  const handleAndroidChange = (event: DateTimePickerEvent, date?: Date) => {
+    setOpen(false)
+
+    if (event.type !== 'set' || !date) return
+
+    onChange?.(date)
+  }
+
+  const handleIosChange = (_event: DateTimePickerEvent, date?: Date) => {
+    if (!date) return
+
+    setDraftDate(date)
+  }
+
+  const handleIosConfirm = () => {
+    setOpen(false)
+    onChange?.(draftDate)
+  }
+
   return (
     <View style={[styles.datepicker, inline && styles.inline]}>
       {label ? <Typography style={styles.label}>{label}</Typography> : null}
@@ -80,7 +111,7 @@ export default function Datepicker({
         accessibilityRole="button"
         accessibilityState={{ disabled }}
         disabled={disabled}
-        onPress={() => setOpen(true)}
+        onPress={handleOpen}
         style={[
           styles.input,
           styles[paddingSize],
@@ -95,19 +126,45 @@ export default function Datepicker({
           {value ? formatDate(selectedDate) : placeholder}
         </Typography>
       </Pressable>
-      <DatePicker
-        modal
-        open={open}
-        date={selectedDate}
-        mode="date"
-        minimumDate={minimumDate}
-        maximumDate={maximumDate}
-        onConfirm={(date) => {
-          setOpen(false)
-          onChange?.(date)
-        }}
-        onCancel={() => setOpen(false)}
-      />
+
+      {Platform.OS === 'ios' ? (
+        <Modal isOpen={open} onClose={handleClose}>
+          <View style={styles.iosPicker}>
+            <Typography
+              variant="title-sm"
+              weight="bold"
+              color="active"
+              style={styles.iosPickerTitle}
+            >
+              {label ?? 'Selecione uma data'}
+            </Typography>
+
+            <DateTimePicker
+              display="spinner"
+              locale="pt-BR"
+              maximumDate={maximumDate}
+              minimumDate={minimumDate}
+              mode="date"
+              onChange={handleIosChange}
+              value={draftDate}
+            />
+
+            <Button size="medium" fullWidth onPress={handleIosConfirm}>
+              Confirmar
+            </Button>
+          </View>
+        </Modal>
+      ) : null}
+
+      {Platform.OS === 'android' && open ? (
+        <DateTimePicker
+          maximumDate={maximumDate}
+          minimumDate={minimumDate}
+          mode="date"
+          onChange={handleAndroidChange}
+          value={draftDate}
+        />
+      ) : null}
     </View>
   )
 }
