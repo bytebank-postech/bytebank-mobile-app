@@ -19,7 +19,8 @@ remoção das próprias transações, com dados persistidos no Cloud Firestore.
 - Filtros por categoria e por período, e busca pelo início da descrição
 - Cadastro e edição em formulário único, com validação de campos via Zod
 - Remoção com diálogo de confirmação
-- Anexo de recibos em PDF, JPG, PNG ou WEBP (veja as limitações conhecidas)
+- Anexo de recibos em PDF, JPG, PNG ou WEBP, com pré-visualização das imagens
+  no formulário e na listagem (veja as limitações conhecidas)
 - Estado global com Context API, tanto para autenticação quanto para transações
 
 ## Requisitos
@@ -183,13 +184,14 @@ src/
 │   ├── Datepicker/     seletor de data, com implementação web e nativa
 │   ├── TransactionFormModal/  formulário de cadastro e edição
 │   ├── ReceiptsField/  anexos do formulário
+│   ├── ReceiptViewerModal/  visualização dos recibos de uma transação
 │   └── layout/         Header, Menu, Avatar
 ├── contexts/           AuthContext e TransactionsContext
 ├── services/
 │   ├── firebase.ts     inicialização do SDK
 │   ├── auth.ts         login, cadastro e logout
 │   ├── transactions/   contrato e implementações (Firestore e mock)
-│   └── receipts/       contrato, seleção de arquivo e implementação mock
+│   └── receipts/       contrato, seleção de arquivo e implementações
 ├── shared/
 │   ├── types/          modelo de domínio
 │   ├── utils/          datas, arquivos, agregação do dashboard
@@ -220,11 +222,16 @@ Algumas decisões que ajudam a ler o código:
 
 ## Limitações conhecidas
 
-- **Recibos não são enviados para o Firebase Storage.** O bucket não está
-  habilitado no projeto, então a implementação ativa é um mock: a seleção do
-  arquivo é real e a validação de tipo e tamanho acontece, mas nenhum byte sai
-  do aparelho e a URL gerada é fictícia. A troca para o Storage exige apenas
-  uma nova implementação do contrato `ReceiptStorageService`
+- **Recibos são gravados dentro do documento da transação, e não no Firebase
+  Storage.** O bucket exige o plano Blaze, que não está habilitado no projeto,
+  então o arquivo é convertido para base64 e salvo no próprio documento. Como o
+  Firestore limita cada documento a 1 MiB, os recibos de uma mesma transação
+  somam no máximo 700 KB — o que normalmente exclui fotos tiradas com a câmera.
+  A troca para o Storage exige apenas uma nova implementação do contrato
+  `ReceiptStorageService`
+- **Pré-visualização apenas de imagens.** PDFs anexados são listados com nome e
+  tamanho, mas não são exibidos, porque o React Native não renderiza PDF sem
+  uma biblioteca dedicada
 - **A busca encontra pelo início da descrição, não por trecho.** Buscar "sup"
   encontra "Supermercado", mas "mercado" não. É uma limitação do Firestore, que
   não oferece busca por conteúdo

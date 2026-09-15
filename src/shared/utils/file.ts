@@ -9,3 +9,6 @@ export const formatFileSize = (bytes: number) => {
 
   return `${(kilobytes / KILOBYTE).toFixed(1)} MB`
 }
+
+export const isImageMimeType = (mimeType: string) =>
+  mimeType.startsWith('image/')

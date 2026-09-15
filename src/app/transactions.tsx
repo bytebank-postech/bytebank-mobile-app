@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Datepicker from '@/components/Datepicker/Datepicker'
+import ReceiptViewerModal from '@/components/ReceiptViewerModal/ReceiptViewerModal'
 import TransactionFormModal from '@/components/TransactionFormModal/TransactionFormModal'
 import {
   Button,
@@ -66,6 +67,8 @@ export default function TransactionScreen() {
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null)
   const [transactionToRemove, setTransactionToRemove] =
+    useState<Transaction | null>(null)
+  const [transactionToView, setTransactionToView] =
     useState<Transaction | null>(null)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
@@ -127,6 +130,36 @@ export default function TransactionScreen() {
   const handleCloseRemoveDialog = () => {
     setTransactionToRemove(null)
   }
+
+  const handleOpenReceipts = (transaction: Transaction) => {
+    setTransactionToView(transaction)
+  }
+
+  const handleCloseReceipts = () => {
+    setTransactionToView(null)
+  }
+
+  const buildMenuItems = (transaction: Transaction) => [
+    ...(transaction.receipts.length > 0
+      ? [
+          {
+            id: 'receipts',
+            label: 'Ver recibos',
+            onClick: () => handleOpenReceipts(transaction),
+          },
+        ]
+      : []),
+    {
+      id: 'edit',
+      label: 'Editar',
+      onClick: () => handleOpenEditForm(transaction),
+    },
+    {
+      id: 'remove',
+      label: 'Excluir',
+      onClick: () => handleOpenRemoveDialog(transaction),
+    },
+  ]
 
   const renderFooter = () => {
     if (isLoadingMore) {
@@ -190,18 +223,7 @@ export default function TransactionScreen() {
             amount={item.amount}
             date={formatDateToBR(item.date)}
             hasReceipts={item.receipts.length > 0}
-            menuItems={[
-              {
-                id: 'edit',
-                label: 'Editar',
-                onClick: () => handleOpenEditForm(item),
-              },
-              {
-                id: 'remove',
-                label: 'Excluir',
-                onClick: () => handleOpenRemoveDialog(item),
-              },
-            ]}
+            menuItems={buildMenuItems(item)}
             menuPlacement="inline-right"
           />
         )}
@@ -325,6 +347,15 @@ export default function TransactionScreen() {
           pendingLabel="Excluindo..."
           onConfirm={() => removeTransaction(transactionToRemove.id)}
           onClose={handleCloseRemoveDialog}
+        />
+      ) : null}
+
+      {transactionToView ? (
+        <ReceiptViewerModal
+          isOpen
+          transactionName={transactionToView.name}
+          receipts={transactionToView.receipts}
+          onClose={handleCloseReceipts}
         />
       ) : null}
     </SafeAreaView>

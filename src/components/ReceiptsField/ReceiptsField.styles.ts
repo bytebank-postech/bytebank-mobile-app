@@ -17,6 +17,20 @@ export const styles = StyleSheet.create({
   receiptInfo: {
     flex: 1,
   },
+  thumbnail: {
+    width: 40,
+    height: 40,
+    borderRadius: 6,
+    backgroundColor: colors.gray,
+  },
+  thumbnailFallback: {
+    width: 40,
+    height: 40,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.gray,
+  },
   removeButton: {
     width: 32,
     height: 32,
