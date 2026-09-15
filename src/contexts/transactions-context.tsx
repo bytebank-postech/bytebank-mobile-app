@@ -15,14 +15,27 @@ import {
   type UpdateTransactionInput,
 } from '@/services/transactions'
 import type { Transaction } from '@/shared/types/transaction'
+import {
+  buildTransactionSummary,
+  getSummaryStartDate,
+  type TransactionSummary,
+} from '@/shared/utils/transaction-summary'
 
 import { useAuth } from './auth-context'
 
+const RECENT_TRANSACTIONS_LIMIT = 5
+
 const FALLBACK_ERROR = 'Não foi possível carregar suas transações.'
+const SUMMARY_FALLBACK_ERROR = 'Não foi possível carregar o resumo financeiro.'
 const SIGNED_OUT_ERROR = 'Faça login para registrar transações.'
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error && error.message ? error.message : FALLBACK_ERROR
+
+const getSummaryErrorMessage = (error: unknown) =>
+  error instanceof Error && error.message
+    ? error.message
+    : SUMMARY_FALLBACK_ERROR
 
 const areFiltersEqual = (a: TransactionFilters, b: TransactionFilters) =>
   a.category === b.category &&
@@ -32,11 +45,15 @@ const areFiltersEqual = (a: TransactionFilters, b: TransactionFilters) =>
 
 type TransactionsContextValue = {
   transactions: Transaction[]
+  recentTransactions: Transaction[]
   filters: TransactionFilters
+  summary: TransactionSummary | null
   isLoading: boolean
   isLoadingMore: boolean
   isRefreshing: boolean
+  isSummaryLoading: boolean
   error: string | null
+  summaryError: string | null
   hasMore: boolean
   setFilters: (filters: TransactionFilters) => void
   refresh: () => void
@@ -61,14 +78,22 @@ export const TransactionsProvider = ({
   const userId = user?.uid ?? null
 
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>(
+    []
+  )
   const [filters, setFiltersState] = useState<TransactionFilters>({})
+  const [summary, setSummary] = useState<TransactionSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isSummaryLoading, setIsSummaryLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
   const [cursor, setCursor] = useState<string | null>(null)
 
   const requestIdRef = useRef(0)
+
+  const summaryRequestIdRef = useRef(0)
 
   const isLoadingMoreRef = useRef(false)
 
@@ -115,11 +140,46 @@ export const TransactionsProvider = ({
     [userId]
   )
 
+  const fetchSummary = useCallback(async () => {
+    summaryRequestIdRef.current += 1
+    const requestId = summaryRequestIdRef.current
+
+    if (!userId) {
+      setSummary(null)
+      setRecentTransactions([])
+      setSummaryError(null)
+      setIsSummaryLoading(false)
+      return
+    }
+
+    try {
+      const items = await transactionService.listSince({
+        userId,
+        from: getSummaryStartDate(new Date()),
+      })
+
+      if (summaryRequestIdRef.current !== requestId) return
+
+      setSummary(buildTransactionSummary(items))
+      setRecentTransactions(items.slice(0, RECENT_TRANSACTIONS_LIMIT))
+      setSummaryError(null)
+    } catch (caught) {
+      if (summaryRequestIdRef.current !== requestId) return
+
+      setSummary(null)
+      setRecentTransactions([])
+      setSummaryError(getSummaryErrorMessage(caught))
+    } finally {
+      if (summaryRequestIdRef.current === requestId) setIsSummaryLoading(false)
+    }
+  }, [userId])
+
   useEffect(() => {
     if (isAuthLoading) return
 
     fetchFirstPage(filtersRef.current)
-  }, [fetchFirstPage, isAuthLoading])
+    fetchSummary()
+  }, [fetchFirstPage, fetchSummary, isAuthLoading])
 
   const setFilters = useCallback(
     (next: TransactionFilters) => {
@@ -138,9 +198,20 @@ export const TransactionsProvider = ({
   const refresh = useCallback(() => {
     setIsRefreshing(true)
     setError(null)
+    setIsSummaryLoading(true)
 
     fetchFirstPage(filtersRef.current)
-  }, [fetchFirstPage])
+    fetchSummary()
+  }, [fetchFirstPage, fetchSummary])
+
+  const reload = useCallback(() => {
+    setIsLoading(true)
+    setError(null)
+    setIsSummaryLoading(true)
+
+    void fetchFirstPage(filtersRef.current)
+    void fetchSummary()
+  }, [fetchFirstPage, fetchSummary])
 
   const loadMore = useCallback(async () => {
     if (!userId || !cursor || isLoadingMoreRef.current) return
@@ -176,44 +247,42 @@ export const TransactionsProvider = ({
 
       await transactionService.create(userId, input)
 
-      setIsLoading(true)
-      setError(null)
-      void fetchFirstPage(filtersRef.current)
+      reload()
     },
-    [fetchFirstPage, userId]
+    [reload, userId]
   )
 
   const updateTransaction = useCallback(
     async (id: string, input: UpdateTransactionInput) => {
       await transactionService.update(id, input)
 
-      setIsLoading(true)
-      setError(null)
-      void fetchFirstPage(filtersRef.current)
+      reload()
     },
-    [fetchFirstPage]
+    [reload]
   )
 
   const removeTransaction = useCallback(
     async (id: string) => {
       await transactionService.remove(id)
 
-      setIsLoading(true)
-      setError(null)
-      void fetchFirstPage(filtersRef.current)
+      reload()
     },
-    [fetchFirstPage]
+    [reload]
   )
 
   return (
     <TransactionsContext.Provider
       value={{
         transactions,
+        recentTransactions,
         filters,
+        summary,
         isLoading,
         isLoadingMore,
         isRefreshing,
+        isSummaryLoading,
         error,
+        summaryError,
         hasMore: cursor !== null,
         setFilters,
         refresh,

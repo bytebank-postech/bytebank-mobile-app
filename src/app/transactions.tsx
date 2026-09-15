@@ -30,6 +30,7 @@ import {
   type TransactionCategory,
 } from '@/shared/types/transaction'
 import { formatDateToBR, toISODate } from '@/shared/utils/date'
+import { buildRemoveTransactionMessage } from '@/shared/utils/transaction-messages'
 import { colors } from '@/styles/colors'
 
 const SEARCH_DEBOUNCE_MS = 400
@@ -41,9 +42,6 @@ const categoryOptions = [
     value: category,
   })),
 ]
-
-const buildRemoveMessage = (name: string) =>
-  `Excluir "${name}"? Essa ação não pode ser desfeita.`
 
 export default function TransactionScreen() {
   const { user, isLoading: isAuthLoading } = useAuth()
@@ -322,7 +320,7 @@ export default function TransactionScreen() {
         <ConfirmDialog
           isOpen
           title="Excluir transação"
-          message={buildRemoveMessage(transactionToRemove.name)}
+          message={buildRemoveTransactionMessage(transactionToRemove.name)}
           confirmLabel="Excluir"
           pendingLabel="Excluindo..."
           onConfirm={() => removeTransaction(transactionToRemove.id)}

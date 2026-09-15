@@ -7,6 +7,7 @@ export {
   DEFAULT_PAGE_SIZE,
   TransactionNotFoundError,
   type CreateTransactionInput,
+  type ListSinceParams,
   type ListTransactionsParams,
   type ListTransactionsResult,
   type TransactionFilters,

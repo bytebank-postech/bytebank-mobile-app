@@ -37,8 +37,14 @@ export type ListTransactionsResult = {
   nextCursor: string | null
 }
 
+export type ListSinceParams = {
+  userId: string
+  from: string
+}
+
 export interface TransactionService {
   list(params: ListTransactionsParams): Promise<ListTransactionsResult>
+  listSince(params: ListSinceParams): Promise<Transaction[]>
   create(
     userId: string,
     input: CreateTransactionInput

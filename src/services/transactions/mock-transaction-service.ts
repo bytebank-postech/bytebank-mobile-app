@@ -4,6 +4,7 @@ import {
   DEFAULT_PAGE_SIZE,
   TransactionNotFoundError,
   type CreateTransactionInput,
+  type ListSinceParams,
   type ListTransactionsParams,
   type ListTransactionsResult,
   type TransactionFilters,
@@ -139,6 +140,20 @@ const list = async ({
   }
 }
 
+const listSince = async ({
+  userId,
+  from,
+}: ListSinceParams): Promise<Transaction[]> => {
+  await simulateRequest()
+
+  return store
+    .filter(
+      (transaction) => transaction.userId === userId && transaction.date >= from
+    )
+    .sort((a, b) => descending(a.date, b.date))
+    .map(cloneTransaction)
+}
+
 const create = async (
   userId: string,
   input: CreateTransactionInput
@@ -193,6 +208,7 @@ const remove = async (id: string): Promise<void> => {
 
 export const mockTransactionService: TransactionService = {
   list,
+  listSince,
   create,
   update,
   remove,

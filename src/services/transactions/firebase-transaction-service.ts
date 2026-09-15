@@ -28,6 +28,7 @@ import {
   DEFAULT_PAGE_SIZE,
   TransactionNotFoundError,
   type CreateTransactionInput,
+  type ListSinceParams,
   type ListTransactionsParams,
   type ListTransactionsResult,
   type TransactionFilters,
@@ -40,6 +41,9 @@ const COLLECTION = 'transactions'
 const PREFIX_END = '\uf8ff'
 
 const FALLBACK_ERROR = 'Não foi possível concluir a operação. Tente novamente.'
+
+const INDEX_ERROR =
+  'Não foi possível aplicar esses filtros agora. Tente novamente em instantes.'
 
 type RuleType = 'Debit' | 'Credit'
 
@@ -186,8 +190,10 @@ const toFriendlyError = (error: unknown): Error => {
     case 'unavailable':
       return new Error('Sem conexão com o servidor. Tente novamente.')
     case 'failed-precondition':
-      // Traz o link de criação do índice que falta.
-      return new Error(error instanceof Error ? error.message : FALLBACK_ERROR)
+      // Em dev, a mensagem original traz o link de criação do índice.
+      if (__DEV__ && error instanceof Error) console.warn(error.message)
+
+      return new Error(INDEX_ERROR)
     default:
       return new Error(FALLBACK_ERROR)
   }
@@ -229,6 +235,26 @@ const list = async ({
           ? encodeCursor(toOrderKey(lastItem))
           : null,
     }
+  } catch (error) {
+    throw toFriendlyError(error)
+  }
+}
+
+const listSince = async ({
+  userId,
+  from,
+}: ListSinceParams): Promise<Transaction[]> => {
+  try {
+    const snapshot = await getDocs(
+      query(
+        collection(db, COLLECTION),
+        where('userId', '==', userId),
+        where('date', '>=', from),
+        orderBy('date', 'desc')
+      )
+    )
+
+    return snapshot.docs.map(toTransaction)
   } catch (error) {
     throw toFriendlyError(error)
   }
@@ -325,6 +351,7 @@ const remove = async (id: string): Promise<void> => {
 
 export const firebaseTransactionService: TransactionService = {
   list,
+  listSince,
   create,
   update,
   remove,
