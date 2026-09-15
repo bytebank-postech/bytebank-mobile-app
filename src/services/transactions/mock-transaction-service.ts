@@ -1,6 +1,5 @@
 import type { Transaction } from '@/shared/types/transaction'
 
-import { mockTransactionsSeed } from './mock-transactions-seed'
 import {
   DEFAULT_PAGE_SIZE,
   TransactionNotFoundError,
@@ -19,9 +18,9 @@ const cloneTransaction = (transaction: Transaction): Transaction => ({
   receipts: transaction.receipts.map((receipt) => ({ ...receipt })),
 })
 
-let store: Transaction[] = mockTransactionsSeed.map(cloneTransaction)
+let store: Transaction[] = []
 
-let idCounter = mockTransactionsSeed.length
+let idCounter = 0
 
 const nextId = () => {
   idCounter += 1

@@ -23,10 +23,16 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
-  triggerOpen: {
+  triggerOpenBelow: {
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
     borderBottomWidth: 0,
+  },
+
+  triggerOpenAbove: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderTopWidth: 0,
   },
 
   triggerText: {
@@ -53,20 +59,28 @@ export const styles = StyleSheet.create({
     borderTopColor: colors.primary,
   },
 
+  backdrop: {
+    flex: 1,
+  },
+
   menu: {
     position: 'absolute',
-    left: 0,
-    top: 42,
-    width: '100%',
     backgroundColor: colors.white,
     borderWidth: 2,
     borderColor: colors.primary,
     borderRadius: 8,
+    overflow: 'hidden',
+    elevation: 8,
+  },
+
+  menuBelow: {
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
-    overflow: 'hidden',
-    zIndex: 20,
-    elevation: 8,
+  },
+
+  menuAbove: {
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
 
   option: {

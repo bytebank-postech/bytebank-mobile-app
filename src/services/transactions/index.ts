@@ -1,7 +1,7 @@
-import { mockTransactionService } from './mock-transaction-service'
+import { firebaseTransactionService } from './firebase-transaction-service'
 import type { TransactionService } from './transaction-service.types'
 
-export const transactionService: TransactionService = mockTransactionService
+export const transactionService: TransactionService = firebaseTransactionService
 
 export {
   DEFAULT_PAGE_SIZE,

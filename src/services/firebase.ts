@@ -1,7 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { initializeApp, getApps, getApp } from 'firebase/app'
-import { getAuth, initializeAuth, type Auth } from 'firebase/auth'
+import * as firebaseAuth from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
 import { Platform } from 'react-native'
+
+type ReactNativeAuthModule = {
+  getReactNativePersistence: (storage: unknown) => firebaseAuth.Persistence
+}
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -15,23 +20,26 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
 
-function createAuth(): Auth {
+function createAuth(): firebaseAuth.Auth {
   try {
     if (Platform.OS === 'web') {
-      const { browserLocalPersistence } = require('firebase/auth')
-      return initializeAuth(app, {
-        persistence: browserLocalPersistence,
+      return firebaseAuth.initializeAuth(app, {
+        persistence: firebaseAuth.browserLocalPersistence,
       })
     }
 
-    const { getReactNativePersistence } = require('firebase/auth')
-    return initializeAuth(app, {
+    // getReactNativePersistence só existe na build nativa do SDK.
+    const { getReactNativePersistence } =
+      firebaseAuth as unknown as ReactNativeAuthModule
+
+    return firebaseAuth.initializeAuth(app, {
       persistence: getReactNativePersistence(AsyncStorage),
     })
   } catch {
-    return getAuth(app)
+    return firebaseAuth.getAuth(app)
   }
 }
 
 export const firebaseApp = app
 export const auth = createAuth()
+export const db = getFirestore(app)

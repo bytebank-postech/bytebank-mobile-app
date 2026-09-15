@@ -12,6 +12,7 @@ import { styles } from './ReceiptsField.styles'
 import type { ReceiptsFieldProps } from './ReceiptsField.types'
 
 const FALLBACK_ERROR = 'Não foi possível anexar o arquivo.'
+const SIGNED_OUT_ERROR = 'Faça login para anexar recibos.'
 
 export default function ReceiptsField({
   receipts,
@@ -19,7 +20,9 @@ export default function ReceiptsField({
   onAdd,
   onRemove,
 }: ReceiptsFieldProps) {
-  const { userId } = useAuth()
+  const { user } = useAuth()
+
+  const userId = user?.uid
 
   const [isUploading, setIsUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -28,6 +31,11 @@ export default function ReceiptsField({
   const handleAttach = async () => {
     setError(null)
     setProgress(0)
+
+    if (!userId) {
+      setError(SIGNED_OUT_ERROR)
+      return
+    }
 
     try {
       const file = await pickReceiptFile()

@@ -17,7 +17,6 @@ import {
   Typography,
 } from '@/components/ui'
 import { useAuth } from '@/contexts/auth-context'
-import { MOCK_USER_ID } from '@/shared/constants/auth'
 import type { Transaction, TransactionType } from '@/shared/types/transaction'
 import { toISODate } from '@/shared/utils/date'
 import { colors } from '@/styles/colors'
@@ -29,10 +28,10 @@ const typeOptions = [
   { value: 'Pagamento', label: 'Pagamento' },
 ]
 
-const initialTransactions: Transaction[] = [
+const buildInitialTransactions = (userId: string): Transaction[] => [
   {
     id: '1',
-    userId: MOCK_USER_ID,
+    userId,
     type: 'Depósito',
     category: 'Salário',
     name: 'Salário',
@@ -43,7 +42,7 @@ const initialTransactions: Transaction[] = [
   },
   {
     id: '2',
-    userId: MOCK_USER_ID,
+    userId,
     type: 'Pix',
     category: 'Alimentação',
     name: 'Mercado',
@@ -54,7 +53,7 @@ const initialTransactions: Transaction[] = [
   },
   {
     id: '3',
-    userId: MOCK_USER_ID,
+    userId,
     type: 'Transferência',
     category: 'Moradia',
     name: 'Aluguel',
@@ -79,7 +78,9 @@ const formatCurrency = (value: number) =>
 export default function Home() {
   const router = useRouter()
   const { user, isLoading, signOut } = useAuth()
-  const [transactions, setTransactions] = useState(initialTransactions)
+  const [transactions, setTransactions] = useState<Transaction[]>(() =>
+    buildInitialTransactions(user?.uid ?? '')
+  )
   const [balanceVisible, setBalanceVisible] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [type, setType] = useState<TransactionType | ''>('')
@@ -121,7 +122,7 @@ export default function Home() {
     setTransactions((current) => [
       {
         id: String(Date.now()),
-        userId: MOCK_USER_ID,
+        userId: user?.uid ?? '',
         type,
         category: 'Outros',
         name: name.trim(),

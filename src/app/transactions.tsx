@@ -1,3 +1,4 @@
+import { Redirect } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
@@ -20,6 +21,7 @@ import {
   TransactionItem,
   Typography,
 } from '@/components/ui'
+import { useAuth } from '@/contexts/auth-context'
 import { useTransactions } from '@/contexts/transactions-context'
 import type { CreateTransactionInput } from '@/services/transactions'
 import {
@@ -44,6 +46,8 @@ const buildRemoveMessage = (name: string) =>
   `Excluir "${name}"? Essa ação não pode ser desfeita.`
 
 export default function TransactionScreen() {
+  const { user, isLoading: isAuthLoading } = useAuth()
+
   const {
     transactions,
     filters,
@@ -82,6 +86,10 @@ export default function TransactionScreen() {
 
     return () => clearTimeout(timeout)
   }, [search, category, from, to, setFilters])
+
+  if (!isAuthLoading && !user) {
+    return <Redirect href="/login" />
+  }
 
   const hasActiveFilters = Boolean(search || category || from || to)
 
@@ -270,7 +278,8 @@ export default function TransactionScreen() {
           <View style={styles.periodRow}>
             <View style={styles.periodField}>
               <Datepicker
-                placeholder="De"
+                label="De"
+                placeholder="dd/mm/aaaa"
                 value={from}
                 maximumDate={to ? new Date(`${to}T12:00:00`) : undefined}
                 onChange={(date) => setFrom(toISODate(date))}
@@ -280,7 +289,8 @@ export default function TransactionScreen() {
 
             <View style={styles.periodField}>
               <Datepicker
-                placeholder="Até"
+                label="Até"
+                placeholder="dd/mm/aaaa"
                 value={to}
                 minimumDate={from ? new Date(`${from}T12:00:00`) : undefined}
                 onChange={(date) => setTo(toISODate(date))}

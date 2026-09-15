@@ -19,6 +19,7 @@ import type { Transaction } from '@/shared/types/transaction'
 import { useAuth } from './auth-context'
 
 const FALLBACK_ERROR = 'Não foi possível carregar suas transações.'
+const SIGNED_OUT_ERROR = 'Faça login para registrar transações.'
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error && error.message ? error.message : FALLBACK_ERROR
@@ -55,7 +56,9 @@ export const TransactionsProvider = ({
 }: {
   children: ReactNode
 }) => {
-  const { userId } = useAuth()
+  const { user, isLoading: isAuthLoading } = useAuth()
+
+  const userId = user?.uid ?? null
 
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [filters, setFiltersState] = useState<TransactionFilters>({})
@@ -75,6 +78,15 @@ export const TransactionsProvider = ({
     async (activeFilters: TransactionFilters) => {
       requestIdRef.current += 1
       const requestId = requestIdRef.current
+
+      if (!userId) {
+        setTransactions([])
+        setCursor(null)
+        setError(null)
+        setIsLoading(false)
+        setIsRefreshing(false)
+        return
+      }
 
       try {
         const result = await transactionService.list({
@@ -104,8 +116,10 @@ export const TransactionsProvider = ({
   )
 
   useEffect(() => {
+    if (isAuthLoading) return
+
     fetchFirstPage(filtersRef.current)
-  }, [fetchFirstPage])
+  }, [fetchFirstPage, isAuthLoading])
 
   const setFilters = useCallback(
     (next: TransactionFilters) => {
@@ -129,7 +143,7 @@ export const TransactionsProvider = ({
   }, [fetchFirstPage])
 
   const loadMore = useCallback(async () => {
-    if (!cursor || isLoadingMoreRef.current) return
+    if (!userId || !cursor || isLoadingMoreRef.current) return
 
     isLoadingMoreRef.current = true
     setIsLoadingMore(true)
@@ -158,6 +172,8 @@ export const TransactionsProvider = ({
 
   const createTransaction = useCallback(
     async (input: CreateTransactionInput) => {
+      if (!userId) throw new Error(SIGNED_OUT_ERROR)
+
       await transactionService.create(userId, input)
 
       setIsLoading(true)
