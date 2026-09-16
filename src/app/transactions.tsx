@@ -1,8 +1,9 @@
-import { Redirect } from 'expo-router'
+import { Redirect, router } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
   View,
@@ -10,10 +11,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import Datepicker from '@/components/Datepicker/Datepicker'
+import ReceiptViewerModal from '@/components/ReceiptViewerModal/ReceiptViewerModal'
 import TransactionFormModal from '@/components/TransactionFormModal/TransactionFormModal'
 import {
   Button,
   ConfirmDialog,
+  Icon,
   Input,
   Loader,
   Paper,
@@ -67,6 +70,8 @@ export default function TransactionScreen() {
     useState<Transaction | null>(null)
   const [transactionToRemove, setTransactionToRemove] =
     useState<Transaction | null>(null)
+  const [transactionToView, setTransactionToView] =
+    useState<Transaction | null>(null)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [from, setFrom] = useState('')
@@ -92,6 +97,15 @@ export default function TransactionScreen() {
   const hasActiveFilters = Boolean(search || category || from || to)
 
   const isEmpty = transactions.length === 0
+
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back()
+      return
+    }
+
+    router.replace('/home')
+  }
 
   const handleClearFilters = () => {
     setSearch('')
@@ -127,6 +141,36 @@ export default function TransactionScreen() {
   const handleCloseRemoveDialog = () => {
     setTransactionToRemove(null)
   }
+
+  const handleOpenReceipts = (transaction: Transaction) => {
+    setTransactionToView(transaction)
+  }
+
+  const handleCloseReceipts = () => {
+    setTransactionToView(null)
+  }
+
+  const buildMenuItems = (transaction: Transaction) => [
+    ...(transaction.receipts.length > 0
+      ? [
+          {
+            id: 'receipts',
+            label: 'Ver recibos',
+            onClick: () => handleOpenReceipts(transaction),
+          },
+        ]
+      : []),
+    {
+      id: 'edit',
+      label: 'Editar',
+      onClick: () => handleOpenEditForm(transaction),
+    },
+    {
+      id: 'remove',
+      label: 'Excluir',
+      onClick: () => handleOpenRemoveDialog(transaction),
+    },
+  ]
 
   const renderFooter = () => {
     if (isLoadingMore) {
@@ -190,18 +234,7 @@ export default function TransactionScreen() {
             amount={item.amount}
             date={formatDateToBR(item.date)}
             hasReceipts={item.receipts.length > 0}
-            menuItems={[
-              {
-                id: 'edit',
-                label: 'Editar',
-                onClick: () => handleOpenEditForm(item),
-              },
-              {
-                id: 'remove',
-                label: 'Excluir',
-                onClick: () => handleOpenRemoveDialog(item),
-              },
-            ]}
+            menuItems={buildMenuItems(item)}
             menuPlacement="inline-right"
           />
         )}
@@ -242,9 +275,23 @@ export default function TransactionScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.mainContent}>
-        <Typography variant="title-lg" weight="bold" color="active">
-          Minhas Transações
-        </Typography>
+        <View style={styles.header}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Voltar para a home"
+            onPress={handleGoBack}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.backButtonPressed,
+            ]}
+          >
+            <Icon name="arrow-back" size={24} color={colors.primary} />
+          </Pressable>
+
+          <Typography variant="title-lg" weight="bold" color="active">
+            Minhas Transações
+          </Typography>
+        </View>
 
         <Button size="large" fullWidth onPress={handleOpenCreateForm}>
           Nova transação
@@ -327,6 +374,15 @@ export default function TransactionScreen() {
           onClose={handleCloseRemoveDialog}
         />
       ) : null}
+
+      {transactionToView ? (
+        <ReceiptViewerModal
+          isOpen
+          transactionName={transactionToView.name}
+          receipts={transactionToView.receipts}
+          onClose={handleCloseReceipts}
+        />
+      ) : null}
     </SafeAreaView>
   )
 }
@@ -340,6 +396,21 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     gap: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+  },
+  backButtonPressed: {
+    opacity: 0.6,
   },
   filterSection: {
     gap: 12,

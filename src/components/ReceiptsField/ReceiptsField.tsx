@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import { Button, FormField, Icon, Typography } from '@/components/ui'
 import { useAuth } from '@/contexts/auth-context'
 import { pickReceiptFile, receiptStorageService } from '@/services/receipts'
-import { formatFileSize } from '@/shared/utils/file'
-import { validateReceiptFile } from '@/shared/validation/receipt-schema'
+import { formatFileSize, isImageMimeType } from '@/shared/utils/file'
+import { validateReceiptAddition } from '@/shared/validation/receipt-schema'
 import { colors } from '@/styles/colors'
 
 import { styles } from './ReceiptsField.styles'
@@ -25,12 +25,10 @@ export default function ReceiptsField({
   const userId = user?.uid
 
   const [isUploading, setIsUploading] = useState(false)
-  const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
   const handleAttach = async () => {
     setError(null)
-    setProgress(0)
 
     if (!userId) {
       setError(SIGNED_OUT_ERROR)
@@ -42,7 +40,7 @@ export default function ReceiptsField({
 
       if (!file) return
 
-      const invalidReason = validateReceiptFile(file)
+      const invalidReason = validateReceiptAddition(file, receipts)
 
       if (invalidReason) {
         setError(invalidReason)
@@ -51,11 +49,7 @@ export default function ReceiptsField({
 
       setIsUploading(true)
 
-      const receipt = await receiptStorageService.upload({
-        userId,
-        file,
-        onProgress: setProgress,
-      })
+      const receipt = await receiptStorageService.upload({ userId, file })
 
       onAdd(receipt)
     } catch (caught) {
@@ -69,7 +63,7 @@ export default function ReceiptsField({
     }
   }
 
-  const attachLabel = isUploading ? `Enviando ${progress}%` : 'Anexar recibo'
+  const attachLabel = isUploading ? 'Anexando...' : 'Anexar recibo'
 
   return (
     <FormField label="Recibos" error={error ?? undefined}>
@@ -82,7 +76,18 @@ export default function ReceiptsField({
 
         {receipts.map((receipt) => (
           <View key={receipt.id} style={styles.receipt}>
-            <Icon name="description" size={20} color={colors.primary} />
+            {isImageMimeType(receipt.mimeType) ? (
+              <Image
+                accessibilityLabel={`Pré-visualização de ${receipt.name}`}
+                source={{ uri: receipt.downloadURL }}
+                style={styles.thumbnail}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.thumbnailFallback}>
+                <Icon name="description" size={20} color={colors.primary} />
+              </View>
+            )}
 
             <View style={styles.receiptInfo}>
               <Typography variant="body-sm" color="active">

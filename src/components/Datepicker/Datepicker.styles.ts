@@ -54,4 +54,12 @@ export const styles = StyleSheet.create({
   placeholder: {
     color: colors.typographyPlaceholder,
   },
+  iosPicker: {
+    width: '100%',
+    gap: 16,
+    alignItems: 'center',
+  },
+  iosPickerTitle: {
+    paddingRight: 40,
+  },
 })
